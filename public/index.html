@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>被災地のつぶやき API</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
+    .container { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+    h1 { font-size: 1.5rem; margin-bottom: 16px; }
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card h2 { font-size: 1.1rem; margin-bottom: 8px; }
+    .quote { font-size: 1rem; margin-bottom: 12px; white-space: pre-wrap; }
+    .meta { font-size: 0.85rem; color: #666; }
+    .category-tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; margin-right: 8px; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    select, button { padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; background: #fff; cursor: pointer; }
+    button { background: #1a73e8; color: #fff; border: none; }
+    button:hover { background: #1557b0; }
+    .endpoints { font-size: 0.85rem; }
+    .endpoints code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+    .endpoints li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>被災地のつぶやき</h1>
+
+    <div class="controls">
+      <select id="category">
+        <option value="">すべてのカテゴリ</option>
+      </select>
+      <button id="randomBtn">ランダムに読む</button>
+    </div>
+
+    <div id="article" class="card" style="display:none;">
+      <h2 id="articleTitle"></h2>
+      <div class="quote" id="articleText"></div>
+      <div class="meta">
+        <span class="category-tag" id="articleCategory"></span>
+        <span id="articleDate"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>API Endpoints</h2>
+      <ul class="endpoints">
+        <li><code>GET /api/articles</code> - 記事一覧（page, limit, search, year, month, category）</li>
+        <li><code>GET /api/articles/random</code> - ランダム1件（?category=カテゴリ名）</li>
+        <li><code>GET /api/articles/:id</code> - 記事詳細</li>
+        <li><code>GET /api/categories</code> - カテゴリ一覧と件数</li>
+        <li><code>GET /api/stats</code> - 統計情報</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const categorySelect = document.getElementById("category");
+    const randomBtn = document.getElementById("randomBtn");
+    const articleDiv = document.getElementById("article");
+
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((res) => {
+        res.data.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c.name;
+          opt.textContent = `${c.name} (${c.count})`;
+          categorySelect.appendChild(opt);
+        });
+      });
+
+    function loadRandom() {
+      const cat = categorySelect.value;
+      const qs = cat ? `?category=${encodeURIComponent(cat)}` : "";
+      fetch(`/api/articles/random${qs}`)
+        .then((r) => r.json())
+        .then((a) => {
+          document.getElementById("articleTitle").textContent = a.title;
+          document.getElementById("articleText").textContent = a.content_text || a.description;
+          document.getElementById("articleCategory").textContent = a.category;
+          document.getElementById("articleDate").textContent = new Date(a.date).toLocaleDateString("ja-JP");
+          articleDiv.style.display = "block";
+        });
+    }
+
+    randomBtn.addEventListener("click", loadRandom);
+    loadRandom();
+  </script>
+</body>
+</html>
