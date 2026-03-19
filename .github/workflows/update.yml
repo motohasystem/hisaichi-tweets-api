@@ -1,0 +1,67 @@
+name: Weekly Update
+
+on:
+  schedule:
+    # 毎日 9:00 JST (0:00 UTC)
+    - cron: "0 0 * * *"
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch new articles
+        id: fetch
+        run: python scripts/fetch_new.py
+
+      - name: Classify articles
+        run: python scripts/classify.py
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/articles.json data/articles_classified.json
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update articles $(date +%Y-%m-%d)"
+          git push
+
+      - name: Deploy to Cloudflare
+        if: steps.fetch.outputs.added != '0'
+        run: |
+          npm install
+          npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Notify Slack
+        if: always()
+        run: |
+          ADDED="${{ steps.fetch.outputs.added }}"
+          TOTAL="${{ steps.fetch.outputs.total }}"
+          TITLES="${{ steps.fetch.outputs.titles }}"
+          STATUS="${{ job.status }}"
+
+          if [ "$STATUS" = "success" ] && [ "$ADDED" != "0" ] && [ -n "$ADDED" ]; then
+            TEXT="✅ 被災地のつぶやき更新: ${ADDED}件追加（合計${TOTAL}件）\n📝 ${TITLES}"
+          elif [ "$STATUS" = "success" ]; then
+            TEXT="📭 被災地のつぶやき: 新着記事なし"
+          else
+            TEXT="❌ 被災地のつぶやき更新失敗\n詳細: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
+
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"${TEXT}\"}"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
