@@ -4,55 +4,323 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>被災地のつぶやき API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+Mono:wght@400&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
-    .container { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
-    h1 { font-size: 1.5rem; margin-bottom: 16px; }
-    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .card h2 { font-size: 1.1rem; margin-bottom: 8px; }
-    .quote { font-size: 1rem; margin-bottom: 12px; white-space: pre-wrap; }
-    .meta { font-size: 0.85rem; color: #666; }
-    .category-tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; margin-right: 8px; }
-    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-    select, button { padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; background: #fff; cursor: pointer; }
-    button { background: #1a73e8; color: #fff; border: none; }
-    button:hover { background: #1557b0; }
-    .endpoints { font-size: 0.85rem; }
-    .endpoints code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
-    .endpoints li { margin-bottom: 6px; }
+    :root {
+      /* プライマリー */
+      --primary: #0031d8;
+      --primary-hover: #0017c1;
+      --primary-light: #e8f1fe;
+
+      /* テキスト */
+      --text-body: #1a1a1a;
+      --text-sub: #4d4d4d;
+      --text-description: #757575;
+
+      /* 背景 */
+      --bg-primary: #ffffff;
+      --bg-secondary: #f2f2f2;
+
+      /* ボーダー */
+      --border-default: #b3b3b3;
+      --border-field: #757575;
+
+      /* リンク */
+      --link-default: #0031d8;
+      --link-visited: #8b008b;
+      --link-hover: #3460fb;
+      --link-focus-bg: #ffd43d;
+      --link-focus-outline: #000000;
+
+      /* エレベーション */
+      --elevation-1: 0 2px 8px 1px rgba(0,0,0,0.1), 0 1px 5px 0 rgba(0,0,0,0.3);
+
+      /* フォント */
+      --font-sans: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Noto Sans Mono', monospace;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.7;
+      color: var(--text-body);
+      background: var(--bg-secondary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+
+    /* ===== Layout ===== */
+    .page { min-height: 100dvh; display: flex; flex-direction: column; }
+
+    header {
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border-default);
+      padding: 24px 16px;
+    }
+
+    .header-inner {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.4;
+      letter-spacing: 0.02em;
+    }
+
+    header p {
+      margin-top: 4px;
+      font-size: 0.875rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    main {
+      flex: 1;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    @media (min-width: 768px) {
+      header { padding: 32px 24px; }
+      main { padding: 48px 24px; }
+    }
+
+    /* ===== Controls ===== */
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    select {
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      line-height: 1.0;
+      padding: 12px 16px;
+      border: 1px solid var(--border-field);
+      border-radius: 8px;
+      background: var(--bg-primary);
+      color: var(--text-body);
+      cursor: pointer;
+      min-height: 48px;
+    }
+
+    select:focus {
+      outline: 2px solid var(--link-focus-outline);
+      background-color: var(--link-focus-bg);
+    }
+
+    .btn-primary {
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.0;
+      padding: 12px 24px;
+      min-height: 48px;
+      min-width: 136px;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #ffffff;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-primary:focus {
+      outline: 2px solid var(--link-focus-outline);
+      outline-offset: 2px;
+      background-color: var(--link-focus-bg);
+      color: var(--text-body);
+    }
+
+    /* ===== Article Card ===== */
+    .article-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 32px;
+      box-shadow: var(--elevation-1);
+    }
+
+    .article-card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 16px;
+      color: var(--text-body);
+    }
+
+    .quote {
+      font-size: 1rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      margin-bottom: 16px;
+      color: var(--text-body);
+    }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .category-tag {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.875rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 624.9375rem;
+      line-height: 1.0;
+    }
+
+    .date {
+      font-size: 0.875rem;
+      color: var(--text-sub);
+    }
+
+    /* ===== Endpoints Section ===== */
+    .section-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .section-card h2 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 16px;
+      color: var(--text-body);
+    }
+
+    .endpoints {
+      list-style: none;
+      padding: 0;
+    }
+
+    .endpoints li {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--bg-secondary);
+      color: var(--text-sub);
+    }
+
+    .endpoints li:last-child { border-bottom: none; }
+
+    .endpoints code {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      background: var(--bg-secondary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--text-body);
+    }
+
+    /* ===== Footer ===== */
+    footer {
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border-default);
+      padding: 24px 16px;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: var(--text-sub);
+    }
+
+    footer a {
+      color: var(--link-default);
+      text-decoration: underline;
+    }
+
+    footer a:visited { color: var(--link-visited); }
+
+    footer a:hover {
+      color: var(--link-hover);
+      text-decoration-thickness: 2px;
+    }
+
+    footer a:focus {
+      outline: 2px solid var(--link-focus-outline);
+      background-color: var(--link-focus-bg);
+    }
+
+    @media (min-width: 768px) {
+      footer { padding: 32px 24px; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>被災地のつぶやき</h1>
-
-    <div class="controls">
-      <select id="category">
-        <option value="">すべてのカテゴリ</option>
-      </select>
-      <button id="randomBtn">ランダムに読む</button>
-    </div>
-
-    <div id="article" class="card" style="display:none;">
-      <h2 id="articleTitle"></h2>
-      <div class="quote" id="articleText"></div>
-      <div class="meta">
-        <span class="category-tag" id="articleCategory"></span>
-        <span id="articleDate"></span>
+  <div class="page">
+    <header>
+      <div class="header-inner">
+        <h1>被災地のつぶやき</h1>
+        <p>被災された方々の声を届けるAPI</p>
       </div>
-    </div>
+    </header>
 
-    <div class="card">
-      <h2>API Endpoints</h2>
-      <ul class="endpoints">
-        <li><code>GET /api/articles</code> - 記事一覧（page, limit, search, year, month, category）</li>
-        <li><code>GET /api/articles/random</code> - ランダム1件（?category=カテゴリ名）</li>
-        <li><code>GET /api/articles/:id</code> - 記事詳細</li>
-        <li><code>GET /api/categories</code> - カテゴリ一覧と件数</li>
-        <li><code>GET /api/stats</code> - 統計情報</li>
-      </ul>
-    </div>
+    <main>
+      <div class="controls">
+        <select id="category" aria-label="カテゴリを選択">
+          <option value="">すべてのカテゴリ</option>
+        </select>
+        <button class="btn-primary" id="randomBtn" type="button">ランダムに読む</button>
+      </div>
+
+      <article class="article-card" id="article" style="display:none;" aria-live="polite">
+        <h2 id="articleTitle"></h2>
+        <div class="quote" id="articleText"></div>
+        <div class="meta">
+          <span class="category-tag" id="articleCategory"></span>
+          <span class="date" id="articleDate"></span>
+        </div>
+      </article>
+
+      <section class="section-card" aria-labelledby="endpoints-heading">
+        <h2 id="endpoints-heading">API Endpoints</h2>
+        <ul class="endpoints">
+          <li><code>GET /api/articles</code> 記事一覧（page, limit, search, year, month, category）</li>
+          <li><code>GET /api/articles/random</code> ランダム1件（?category=カテゴリ名）</li>
+          <li><code>GET /api/articles/:id</code> 記事詳細</li>
+          <li><code>GET /api/categories</code> カテゴリ一覧と件数</li>
+          <li><code>GET /api/stats</code> 統計情報</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        データ出典: <a href="http://hisaichi.seesaa.net/" target="_blank" rel="noopener">被災地のつぶやき</a> — 著作者の許諾を得て利用しています<br>
+        API制作: <a href="https://motohasystem.kamiyama.club/" target="_blank" rel="noopener">Daisuke Motohashi</a>
+      </div>
+    </footer>
   </div>
 
   <script>
