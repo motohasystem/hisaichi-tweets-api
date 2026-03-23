@@ -52,25 +52,43 @@ npm run deploy
 
 ## カテゴリ
 
-| カテゴリ | 件数 |
-|---------|------|
-| すまい・そなえ | 1,200 |
-| 家族・健康 | 608 |
-| 人と人のつながり | 571 |
-| その他 | 501 |
-| くらしむき | 452 |
-| 行政と支援情報 | 278 |
+| カテゴリ         | 件数  |
+| ---------------- | ----- |
+| すまい・そなえ   | 1,200 |
+| 家族・健康       | 608   |
+| 人と人のつながり | 571   |
+| その他           | 501   |
+| くらしむき       | 452   |
+| 行政と支援情報   | 278   |
 
 分類はキーワードマッチベースで行っています。詳細は `scripts/classify.py` を参照してください。
 
 ## API
 
-| メソッド | パス | 説明 |
-|---------|------|------|
-| GET | `/api/articles` | 記事一覧（page, limit, search, year, month, category） |
-| GET | `/api/articles/random` | ランダム1件（?category=カテゴリ名） |
-| GET | `/api/articles/:id` | 記事詳細 |
-| GET | `/api/categories` | カテゴリ一覧と件数 |
-| GET | `/api/stats` | 統計情報 |
+Base URL: `https://hisaichi-api.ddssk-m.workers.dev`
+
+| メソッド | パス                   | 説明                                                   |
+| -------- | ---------------------- | ------------------------------------------------------ |
+| GET      | `/api/articles`        | 記事一覧（page, limit, search, year, month, category） |
+| GET      | `/api/articles/random` | ランダム1件（?category=カテゴリ名）                    |
+| GET      | `/api/articles/:id`    | 記事詳細                                               |
+| GET      | `/api/categories`      | カテゴリ一覧と件数                                     |
+| GET      | `/api/stats`           | 統計情報                                               |
+
+### サンプルリクエスト
+
+```
+# 統計情報を取得
+curl https://hisaichi-api.ddssk-m.workers.dev/api/stats
+
+# ランダムに1件取得
+curl https://hisaichi-api.ddssk-m.workers.dev/api/articles/random
+
+# カテゴリを指定してランダム取得
+curl "https://hisaichi-api.ddssk-m.workers.dev/api/articles/random?category=家族・健康"
+
+# 記事を検索
+curl "https://hisaichi-api.ddssk-m.workers.dev/api/articles?search=電源&limit=5"
+```
 
 詳細は [API.md](API.md) を参照してください。
