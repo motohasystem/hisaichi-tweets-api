@@ -2,8 +2,8 @@ name: Weekly Update
 
 on:
   schedule:
-    # 毎日 9:00 JST (0:00 UTC)
-    - cron: "0 0 * * *"
+    # 毎週土曜 6:00 JST (金曜 21:00 UTC)
+    - cron: "0 21 * * 5"
   workflow_dispatch: # 手動実行も可能
 
 permissions:
